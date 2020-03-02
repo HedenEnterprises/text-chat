@@ -4,6 +4,7 @@
 
 check_args $# 1 "Usage: ./$0 <s3-bucket-name> <optional region>"
 check_deps aws
+check_python_deps boto3
 
 name=$1
 region=""
