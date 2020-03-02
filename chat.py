@@ -8,6 +8,9 @@ import time
 
 __version__ = '0.0.0'
 
+__default_format__ = '[%%t] %%n > %%m'
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description = 'text-chat: make it look like you\'re working from cli')
     parser.add_argument('-p', '--print-backends', action = 'store_true',
@@ -20,6 +23,8 @@ def parse_arguments():
         help = 'the configuration file to use')
     parser.add_argument('-s', '--send', metavar = '<message>',
         help = 'a message to send to the chat server')
+    parser.add_argument('-f', '--format', metavar = '<fmt string>', default = __default_format__,
+        help = 'the message formatter. %%n: name, %%m: msg, %%t: human time, %%T: unix time, default (' + __default_format__ + ')')
     parser.add_argument('-v', '--version', action = 'version', version = __version__,
         help = 'print version information and quit')
     return parser.parse_args()
@@ -56,6 +61,9 @@ def process_config(options):
 
         if key == "backend" and options.backend == None:
             options.backend = value
+
+        if key == "format" and options.format != __default_format__:
+            options.format = value
 
     return options
 
@@ -98,18 +106,25 @@ def load_plugin(backend):
 
 def check_for_new_messages():
     print("")
+
+
 def format_messages():
     print("")
+
+
 def print_messages():
     print("")
+
+
 def send_chat():
     print("")
+
 
 options = process_config(parse_arguments())
 sanity_check(options)
 load_plugin(options.backend)
 
-
+# main loop
 while True:
 
     check_for_new_messages()
