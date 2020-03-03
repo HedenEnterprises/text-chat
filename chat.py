@@ -11,6 +11,7 @@ from datetime import datetime
 __version__ = '0.0.0'
 __default_format__ = '[%%t] %%n > %%m'
 __default_prompt__ = 'chat: '
+__tmp_file__ = 'tmp'
 
 
 def parse_arguments():
@@ -31,6 +32,8 @@ def parse_arguments():
         help = 'print version information and quit')
     parser.add_argument('-P', '--prompt', default = __default_prompt__,
         help = 'the prompt to display for chat input, default (' + __default_prompt__ + ')')
+    parser.add_argument('-n', '--name',
+        help = 'the name to identify yourself as in the chat')
     return parser.parse_args()
 
 
@@ -72,6 +75,11 @@ def process_config(options):
         if key == "prompt" and options.format != __default_prompt__:
             options.prompt = value
 
+        if key == "name" and options.name != None:
+            options.name = value
+
+    file.close()
+
     return options
 
 
@@ -99,16 +107,21 @@ def sanity_check(options):
 # ```
 # but i can't get it to work. so just maintain a list of backend/file
 # because it just works
-def load_plugin(backend):
+def load_plugin(options):
 
     # load appropriate backend
     try:
-        if backend == "aws-s3":
+        if options.backend == "aws-s3":
             from backends.aws.s3 import plugin
     except:
         print("something went wrong loading plugin")
 
     global plugin
+
+    options = plugin.process_config(options)
+    plugin.sanity_check(options)
+    plugin.init(options)
+    return options
 
 
 def check_for_new_messages(options):
@@ -119,10 +132,9 @@ def format_messages(messages, format):
     formatted_messages = []
     for message in messages:
         message_time = int(message['time'])
-        formatted_message = format.replace('%%n', message['name']).replace('%%m', message['message']).replace('%%t', datetime.utcfromtimestamp(message_time).strftime('%Y-%m-%d %H:%M:%S')).replace('%%T', str(message['time']))
+        formatted_message = format.replace('%%n', message['name']).replace('%%m', message['message']).replace('%%t', datetime.fromtimestamp(message_time).strftime('%Y-%m-%d %H:%M:%S')).replace('%%T', str(message['time']))
         formatted_messages.append(formatted_message)
     return formatted_messages
-
 
 
 def print_messages(formatted_messages):
@@ -136,10 +148,13 @@ def send_chat(message):
     if message == "" or message == None:
         return
 
+    plugin.send_chat(message)
+
 
 options = process_config(parse_arguments())
 sanity_check(options)
-load_plugin(options.backend)
+options = load_plugin(options)
+options.tmp_file = __tmp_file__
 
 
 # main loop

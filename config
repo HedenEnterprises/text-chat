@@ -1,2 +1,5 @@
 backend = aws-s3
 interactive = true
+s3bucket = test
+s3path = test
+name = hedenface
