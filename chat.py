@@ -5,10 +5,12 @@ import os
 import time
 import importlib
 import time
+from datetime import datetime
+
 
 __version__ = '0.0.0'
-
 __default_format__ = '[%%t] %%n > %%m'
+__default_prompt__ = 'chat: '
 
 
 def parse_arguments():
@@ -27,6 +29,8 @@ def parse_arguments():
         help = 'the message formatter. %%n: name, %%m: msg, %%t: human time, %%T: unix time, default (' + __default_format__ + ')')
     parser.add_argument('-v', '--version', action = 'version', version = __version__,
         help = 'print version information and quit')
+    parser.add_argument('-P', '--prompt', default = __default_prompt__,
+        help = 'the prompt to display for chat input, default (' + __default_prompt__ + ')')
     return parser.parse_args()
 
 
@@ -64,6 +68,9 @@ def process_config(options):
 
         if key == "format" and options.format != __default_format__:
             options.format = value
+
+        if key == "prompt" and options.format != __default_prompt__:
+            options.prompt = value
 
     return options
 
@@ -104,36 +111,43 @@ def load_plugin(backend):
     global plugin
 
 
-def check_for_new_messages():
-    print("")
+def check_for_new_messages(options):
+    return plugin.check_for_new_messages(options)
 
 
-def format_messages():
-    print("")
+def format_messages(messages, format):
+    formatted_messages = []
+    for message in messages:
+        message_time = int(message['time'])
+        formatted_message = format.replace('%%n', message['name']).replace('%%m', message['message']).replace('%%t', datetime.utcfromtimestamp(message_time).strftime('%Y-%m-%d %H:%M:%S')).replace('%%T', str(message['time']))
+        formatted_messages.append(formatted_message)
+    return formatted_messages
 
 
-def print_messages():
-    print("")
+
+def print_messages(formatted_messages):
+    for message in formatted_messages:
+        print(message)
 
 
-def send_chat():
-    print("")
+def send_chat(message):
+
+    # don't send blank messages
+    if message == "" or message == None:
+        return
 
 
 options = process_config(parse_arguments())
 sanity_check(options)
 load_plugin(options.backend)
 
+
 # main loop
 while True:
 
-    check_for_new_messages()
-    format_messages()
-    print_messages()
-    send_chat()
-    plugin.func1()
+    messages = check_for_new_messages(options)
+    print_messages(format_messages(messages, options.format))
+    send_chat(input(options.prompt))
 
     if not options.interactive:
         break
-
-    time.sleep(1)
