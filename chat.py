@@ -75,7 +75,7 @@ def process_config(options):
         if key == "prompt" and options.format != __default_prompt__:
             options.prompt = value
 
-        if key == "name" and options.name != None:
+        if key == "name" and options.name == None:
             options.name = value
 
     file.close()
@@ -95,6 +95,11 @@ def sanity_check(options):
     plugin_file = "backends/" + backend + "/plugin.py"
     if not os.path.exists(plugin_file):
         print("plugin (" + options.backend + ") requires file '" + plugin_file + "', file not found!")
+        sys.exit(1)
+
+    # need a name specified
+    if options.name == "" or options.name == None:
+        print("you need a name to chat, silly")
         sys.exit(1)
 
     # todo: check that all necessary functions exist in the plugin
@@ -142,13 +147,13 @@ def print_messages(formatted_messages):
         print(message)
 
 
-def send_chat(message):
+def send_chat(message, options):
 
     # don't send blank messages
     if message == "" or message == None:
         return
 
-    plugin.send_chat(message)
+    plugin.send_chat(message, options)
 
 
 options = process_config(parse_arguments())
@@ -162,7 +167,9 @@ while True:
 
     messages = check_for_new_messages(options)
     print_messages(format_messages(messages, options.format))
-    send_chat(input(options.prompt))
+    send_chat(input(options.prompt), options)
 
     if not options.interactive:
         break
+
+    time.sleep(1)

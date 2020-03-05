@@ -2,6 +2,8 @@
 import boto3
 import sys
 import os
+import json
+import time
 
 
 def init(options):
@@ -10,8 +12,8 @@ def init(options):
     global s3resource
 
     try:
-        s3client = boto3.client("s3")
-        s3resource = boto3.resource("s3")
+        s3client = boto3.client("s3", verify = False)
+        s3resource = boto3.resource("s3", verify = False)
     except:
         print("something went wrong initializing s3 client/resource")
         sys.exit(1)
@@ -44,15 +46,17 @@ def process_config(options):
 
 def get_s3_file(options):
     try:
-        s3resource.meta.client.download_file(options.s3bucket, options.s3path, options.tmp_file)
+        s3client.download_file(options.s3bucket, options.s3path, options.tmp_file)
     except:
         print("something went wrong downloading s3://" + options.s3bucket + "/" + options.s3path + " to file (" + options.tmp_file + ")")
 
 
 def put_s3_file(options):
     try:
-        s3resourcemeta.client.upload_file(options.tmp_file, options.s3bucket, options.s3path)
+        s3client.upload_file(options.tmp_file, options.s3bucket, options.s3path)
     except:
+        type, value, traceback = sys.exc_info()
+        print("exception: type: " + type + ", value: " + value + ", traceback: " + traceback)
         print("something went wrong uploading file (" + options.tmp_file + ") to s3://" + options.s3bucket + "/" + options.s3path)
 
 
@@ -64,6 +68,7 @@ def check_for_new_messages(options):
 
     # load the file as object
     file = open(options.tmp_file)
+    
     messages = json.load(file)
     file.close()
 
@@ -89,13 +94,41 @@ def check_for_new_messages(options):
     put_s3_file(options)
 
     # delete the tmp file
-    os.remove(options.tmp_file)
+    #os.remove(options.tmp_file)
 
     # return all the un-read messages
     return unread_messages
 
-def send_chat(message):
-    print("send chat (" + message + ")")
+
+def send_chat(contents, options):
+
+    message = { 
+        "message" : contents,
+        "name": options.name,
+        "time": str(int(time.time())),
+        "read-by": [ options.name ]
+    }
+    
+    # get the bucket
+    get_s3_file(options)
+
+    file = open(options.tmp_file)
+    messages = json.load(file)
+    file.close()
+
+    try:
+        messages.append(message)
+    except:
+        print("something wrong appending message..")
+
+    file = open(options.tmp_file, "w")
+    json.dump(messages, file)
+    file.close()
+
+    put_s3_file(options)
+
+    os.remove(options.tmp_file)
+
 
 def sanity_check(options):
     

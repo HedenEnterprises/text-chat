@@ -1,5 +1,5 @@
 backend = aws-s3
 interactive = true
-s3bucket = test
-s3path = test
-name = hedenface
+s3bucket = YOUR-S3-BUCKET
+s3path = YOUR-S3-PATH-OR-KEY-OR-WHATEVER-ARBITRARY-CRAP-THEY-CALL-IT
+name = YOUR-NAME
