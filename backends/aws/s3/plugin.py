@@ -12,8 +12,9 @@ def init(options):
     global s3resource
 
     try:
-        s3client = boto3.client("s3", verify = False)
-        s3resource = boto3.resource("s3", verify = False)
+        #s3client = boto3.client("s3", verify = False)
+        #s3resource = boto3.resource("s3", verify = False)
+        s3client = boto3.client("s3")
     except:
         print("something went wrong initializing s3 client/resource")
         sys.exit(1)
@@ -58,7 +59,6 @@ def put_s3_file(options):
         type, value, traceback = sys.exc_info()
         print("exception: type: " + type + ", value: " + value + ", traceback: " + traceback)
         print("something went wrong uploading file (" + options.tmp_file + ") to s3://" + options.s3bucket + "/" + options.s3path)
-
 
 
 def check_for_new_messages(options):
